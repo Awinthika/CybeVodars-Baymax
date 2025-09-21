@@ -9,27 +9,42 @@ import {
   BookOpen,
   GraduationCap,
   Trophy,
+  LogOut,
 } from "lucide-react";
 
-export default function HomePage({ onOpenChat, onOpenResourceHub, onOpenJournal }) {
+export default function HomePage({ onOpenChat, onOpenResourceHub, onOpenJournal, user, onLogout }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [chatInput, setChatInput] = useState("");
-
   // points shown in header
   const [totalPoints, setTotalPoints] = useState(0);
-
   // sliders
   const [happyLevel, setHappyLevel] = useState(60);
   const [energyLevel, setEnergyLevel] = useState(45);
-
   // localStorage-backed task completion so tile shows progress
   const [completedTasks, setCompletedTasks] = useState({});
-
   // only for counting on the tile (the real list lives in DailyTasksPage)
   const dailyTasks = [
     { id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }, { id: 5 },
     { id: 6 }, { id: 7 }, { id: 8 }, { id: 9 }, { id: 10 },
   ];
+
+  // Get user's first name for greeting
+  const getUserFirstName = () => {
+    if (user?.email) {
+      const name = user.email.split('@')[0];
+      return name.charAt(0).toUpperCase() + name.slice(1);
+    }
+    return user?.type === 'counsellor' ? 'Counsellor' : 'User';
+  };
+
+  // Get user initials for profile button
+  const getUserInitials = () => {
+    if (user?.email) {
+      const name = user.email.split('@')[0];
+      return name.substring(0, 2).toUpperCase();
+    }
+    return user?.type === 'counsellor' ? 'C' : 'U';
+  };
 
   useEffect(() => {
     const savedCompletedTasks = localStorage.getItem("completedTasks");
@@ -54,6 +69,13 @@ export default function HomePage({ onOpenChat, onOpenResourceHub, onOpenJournal 
     onOpenChat();
   }
 
+  const handleLogoutClick = () => {
+    setSidebarOpen(false);
+    if (window.confirm('Are you sure you want to logout?')) {
+      onLogout();
+    }
+  };
+
   return (
     <div className="page-root">
       {/* Header */}
@@ -67,20 +89,27 @@ export default function HomePage({ onOpenChat, onOpenResourceHub, onOpenJournal 
           >
             <Menu className="icon" />
           </button>
-
           <div className="brand">
             <div className="brand-logo">BM</div>
             <div>
               <div className="brand-title">BayMax</div>
-              <div className="brand-tag">Care. Listen. Support.</div>
+              <div className="brand-tag">
+                {user?.type === 'counsellor' 
+                  ? 'Professional Dashboard' 
+                  : 'Care. Listen. Support.'
+                }
+              </div>
             </div>
           </div>
-
-          <button aria-label="profile" className="profile-btn" title="Profile">
-            AK
+          <button 
+            aria-label="profile" 
+            className="profile-btn" 
+            title={`Profile - ${user?.email || 'User'}`}
+            onClick={() => setSidebarOpen(true)}
+          >
+            {getUserInitials()}
           </button>
         </div>
-
         {/* Points Bar */}
         <div className="points-bar">
           <div className="points-info">
@@ -109,6 +138,46 @@ export default function HomePage({ onOpenChat, onOpenResourceHub, onOpenJournal 
               </button>
             </div>
 
+            {/* User Info Section */}
+            <div style={{ 
+              padding: '1rem', 
+              borderBottom: '1px solid #eee', 
+              marginBottom: '1rem' 
+            }}>
+              <div style={{ 
+                fontSize: '0.9rem', 
+                color: '#666', 
+                marginBottom: '0.5rem' 
+              }}>
+                Logged in as:
+              </div>
+              <div style={{ 
+                fontSize: '0.95rem', 
+                fontWeight: '500',
+                color: '#333',
+                marginBottom: '0.25rem' 
+              }}>
+                {user?.email}
+              </div>
+              {user?.type === 'counsellor' && user?.licenseNumber && (
+                <div style={{ 
+                  fontSize: '0.8rem', 
+                  color: '#28a745',
+                  fontWeight: '500' 
+                }}>
+                  License: {user.licenseNumber}
+                </div>
+              )}
+              <div style={{ 
+                fontSize: '0.8rem', 
+                color: user?.type === 'counsellor' ? '#28a745' : '#007bff',
+                textTransform: 'capitalize',
+                fontWeight: '500'
+              }}>
+                {user?.type} Account
+              </div>
+            </div>
+
             <nav className="sidebar-nav">
               {/* Chatbot */}
               <button
@@ -119,7 +188,9 @@ export default function HomePage({ onOpenChat, onOpenResourceHub, onOpenJournal 
                 className="nav-item"
               >
                 <MessageCircle className="nav-icon" />
-                <span>Chatbot</span>
+                <span>
+                  {user?.type === 'counsellor' ? 'Client Chat' : 'Chatbot'}
+                </span>
               </button>
 
               {/* Journal */}
@@ -130,18 +201,24 @@ export default function HomePage({ onOpenChat, onOpenResourceHub, onOpenJournal 
                 }}
                 className="nav-item"
               >
-                <BookOpen className="nav-icon" /> <span>Journal</span>
+                <BookOpen className="nav-icon" />
+                <span>
+                  {user?.type === 'counsellor' ? 'Client Journals' : 'Journal'}
+                </span>
               </button>
 
               {/* Resource Hub */}
               <button
                 onClick={() => {
-                  onOpenResourceHub("resourceHub"); // keep hub accessible
+                  onOpenResourceHub("resourceHub");
                   setSidebarOpen(false);
                 }}
                 className="nav-item"
               >
-                <GraduationCap className="nav-icon" /> <span>Resource Hub</span>
+                <GraduationCap className="nav-icon" />
+                <span>
+                  {user?.type === 'counsellor' ? 'Professional Resources' : 'Resource Hub'}
+                </span>
               </button>
 
               {/* Activities -> Daily Tasks page */}
@@ -152,7 +229,10 @@ export default function HomePage({ onOpenChat, onOpenResourceHub, onOpenJournal 
                 }}
                 className="nav-item"
               >
-                <Activity className="nav-icon" /> <span>Activities</span>
+                <Activity className="nav-icon" />
+                <span>
+                  {user?.type === 'counsellor' ? 'Client Activities' : 'Activities'}
+                </span>
               </button>
 
               {/* Community (placeholder) */}
@@ -162,7 +242,10 @@ export default function HomePage({ onOpenChat, onOpenResourceHub, onOpenJournal 
                 }}
                 className="nav-item"
               >
-                <Users className="nav-icon" /> <span>Community</span>
+                <Users className="nav-icon" />
+                <span>
+                  {user?.type === 'counsellor' ? 'Professional Network' : 'Community'}
+                </span>
               </button>
 
               {/* Counseling (placeholder) */}
@@ -172,7 +255,25 @@ export default function HomePage({ onOpenChat, onOpenResourceHub, onOpenJournal 
                 }}
                 className="nav-item"
               >
-                <Calendar className="nav-icon" /> <span>Book Counseling</span>
+                <Calendar className="nav-icon" />
+                <span>
+                  {user?.type === 'counsellor' ? 'Session Schedule' : 'Book Counseling'}
+                </span>
+              </button>
+
+              {/* Logout Button */}
+              <button
+                onClick={handleLogoutClick}
+                className="nav-item"
+                style={{ 
+                  marginTop: 'auto',
+                  borderTop: '1px solid #eee',
+                  paddingTop: '1rem',
+                  color: '#dc3545' 
+                }}
+              >
+                <LogOut className="nav-icon" />
+                <span>Logout</span>
               </button>
             </nav>
           </aside>
@@ -181,12 +282,20 @@ export default function HomePage({ onOpenChat, onOpenResourceHub, onOpenJournal 
 
       {/* Main content */}
       <main className="content">
-        <div className="greeting">Hey Akshay, what do you want to do ??</div>
+        <div className="greeting">
+          Hey {getUserFirstName()}, 
+          {user?.type === 'counsellor' 
+            ? ' welcome to your professional dashboard!' 
+            : ' what do you want to do?'
+          }
+        </div>
 
-        {/* Sliders */}
+        {/* Sliders - Show for users, different context for counsellors */}
         <section className="sliders">
           <div className="slider-row">
-            <label className="slider-label">Happy</label>
+            <label className="slider-label">
+              {user?.type === 'counsellor' ? 'Client Mood Avg' : 'Happy'}
+            </label>
             <div className="slider-control">
               <input
                 type="range"
@@ -195,14 +304,16 @@ export default function HomePage({ onOpenChat, onOpenResourceHub, onOpenJournal 
                 value={happyLevel}
                 onChange={(e) => setHappyLevel(Number(e.target.value))}
                 className="range"
-                aria-label="Happy level"
+                aria-label={user?.type === 'counsellor' ? 'Client mood average' : 'Happy level'}
+                disabled={user?.type === 'counsellor'} // Read-only for counsellors
               />
               <div className="range-value">{happyLevel}%</div>
             </div>
           </div>
-
           <div className="slider-row">
-            <label className="slider-label">Energy</label>
+            <label className="slider-label">
+              {user?.type === 'counsellor' ? 'Client Energy Avg' : 'Energy'}
+            </label>
             <div className="slider-control">
               <input
                 type="range"
@@ -211,7 +322,8 @@ export default function HomePage({ onOpenChat, onOpenResourceHub, onOpenJournal 
                 value={energyLevel}
                 onChange={(e) => setEnergyLevel(Number(e.target.value))}
                 className="range"
-                aria-label="Energy level"
+                aria-label={user?.type === 'counsellor' ? 'Client energy average' : 'Energy level'}
+                disabled={user?.type === 'counsellor'} // Read-only for counsellors
               />
               <div className="range-value">{energyLevel}%</div>
             </div>
@@ -232,12 +344,19 @@ export default function HomePage({ onOpenChat, onOpenResourceHub, onOpenJournal 
               </div>
             </div>
             <div className="tile-body">
-              <div className="tile-title">Journal</div>
-              <div className="tile-sub">Log your daily journal</div>
+              <div className="tile-title">
+                {user?.type === 'counsellor' ? 'Client Journals' : 'Journal'}
+              </div>
+              <div className="tile-sub">
+                {user?.type === 'counsellor' 
+                  ? 'Review client progress' 
+                  : 'Log your daily journal'
+                }
+              </div>
             </div>
           </button>
-          
-          {/* Community (placeholder) */}
+
+          {/* Community */}
           <button
             className="tile tile-community"
             onClick={() => {}}
@@ -249,12 +368,19 @@ export default function HomePage({ onOpenChat, onOpenResourceHub, onOpenJournal 
               </div>
             </div>
             <div className="tile-body">
-              <div className="tile-title">Community</div>
-              <div className="tile-sub">Join support rooms</div>
+              <div className="tile-title">
+                {user?.type === 'counsellor' ? 'Network' : 'Community'}
+              </div>
+              <div className="tile-sub">
+                {user?.type === 'counsellor' 
+                  ? 'Connect with peers' 
+                  : 'Join support rooms'
+                }
+              </div>
             </div>
           </button>
 
-          {/* Activities -> open Daily Tasks page */}
+          {/* Activities */}
           <button
             className="tile tile-activities"
             onClick={() => onOpenResourceHub("dailyTasks")}
@@ -266,18 +392,23 @@ export default function HomePage({ onOpenChat, onOpenResourceHub, onOpenJournal 
               </div>
             </div>
             <div className="tile-body">
-              <div className="tile-title">Activities</div>
+              <div className="tile-title">
+                {user?.type === 'counsellor' ? 'Client Tasks' : 'Activities'}
+              </div>
               <div className="tile-sub">
-                {getCompletedTasksCount()}/10 completed today
+                {user?.type === 'counsellor' 
+                  ? 'Monitor client progress' 
+                  : `${getCompletedTasksCount()}/10 completed today`
+                }
               </div>
             </div>
           </button>
 
-          {/* Counseling (placeholder) */}
+          {/* Counseling */}
           <button
             className="tile tile-counsel"
             onClick={() => {}}
-            aria-label="Book Counseling"
+            aria-label={user?.type === 'counsellor' ? 'Sessions' : 'Book Counseling'}
           >
             <div className="tile-left">
               <div className="tile-icon circle-orange">
@@ -285,8 +416,15 @@ export default function HomePage({ onOpenChat, onOpenResourceHub, onOpenJournal 
               </div>
             </div>
             <div className="tile-body">
-              <div className="tile-title">Book Counseling</div>
-              <div className="tile-sub">Book anonymously</div>
+              <div className="tile-title">
+                {user?.type === 'counsellor' ? 'Sessions' : 'Book Counseling'}
+              </div>
+              <div className="tile-sub">
+                {user?.type === 'counsellor' 
+                  ? 'Manage appointments' 
+                  : 'Book anonymously'
+                }
+              </div>
             </div>
           </button>
         </div>
@@ -298,9 +436,17 @@ export default function HomePage({ onOpenChat, onOpenResourceHub, onOpenJournal 
           <input
             value={chatInput}
             onChange={(e) => setChatInput(e.target.value)}
-            placeholder="Talk to BayMax..."
+            placeholder={
+              user?.type === 'counsellor' 
+                ? "Quick message to clients..." 
+                : "Talk to BayMax..."
+            }
             className="chat-input"
-            aria-label="Quick chat to BayMax"
+            aria-label={
+              user?.type === 'counsellor' 
+                ? "Quick message to clients" 
+                : "Quick chat to BayMax"
+            }
           />
           <button type="submit" className="chat-send" aria-label="Send quick chat">
             Send <Send className="send-icon" />
